@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Detection Reports{% endblock %}
+{% block page_subtitle %}Full history — filter, act, and download{% endblock %}
+
+{% block content %}
+
+{% set theft_count = reports | selectattr('result','equalto','THEFT_DETECTED') | list | length %}
+{% set safe_count  = reports | selectattr('result','equalto','SAFE') | list | length %}
+{% set fir_count   = reports | selectattr('fir_status','equalto','filed') | list | length %}
+{% set cut_count   = reports | selectattr('meter_status','equalto','cut') | list | length %}
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+  <div class="stat-card blue"><div class="label">Total Reports</div><div class="value">{{ reports|length }}</div></div>
+  <div class="stat-card red"><div class="label">Theft Cases</div><div class="value">{{ theft_count }}</div></div>
+  <div class="stat-card gold"><div class="label">FIRs Filed</div><div class="value">{{ fir_count }}</div></div>
+  <div class="stat-card green"><div class="label">Meters Cut</div><div class="value">{{ cut_count }}</div></div>
+</div>
+
+<!-- Filters -->
+<div class="section-box" style="margin-bottom:20px;">
+  <div class="section-body" style="padding:14px 20px;">
+    <form method="get" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;">Result:</label>
+        <select name="result" onchange="this.form.submit()" style="padding:6px 10px;font-size:12px;border-radius:6px;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:#fff;">
+          <option value="all" {% if result_filter=='all' %}selected{% endif %}>All</option>
+          <option value="THEFT_DETECTED" {% if result_filter=='THEFT_DETECTED' %}selected{% endif %}>Theft Only</option>
+          <option value="SAFE" {% if result_filter=='SAFE' %}selected{% endif %}>Safe Only</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;">Severity:</label>
+        <select name="severity" onchange="this.form.submit()" style="padding:6px 10px;font-size:12px;border-radius:6px;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:#fff;">
+          <option value="all" {% if severity_filter=='all' %}selected{% endif %}>All</option>
+          <option value="CRITICAL" {% if severity_filter=='CRITICAL' %}selected{% endif %}>Critical</option>
+          <option value="HIGH" {% if severity_filter=='HIGH' %}selected{% endif %}>High</option>
+          <option value="MODERATE" {% if severity_filter=='MODERATE' %}selected{% endif %}>Moderate</option>
+        </select>
+      </div>
+      <span style="font-size:12px;color:var(--muted);margin-left:auto;">{{ reports|length }} records</span>
+    </form>
+  </div>
+</div>
+
+<div class="section-box">
+  <div class="section-header">
+    <h3>📋 All Reports</h3>
+  </div>
+  {% if reports %}
+  <div style="overflow-x:auto;">
+  <table class="eg-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>House / Consumer</th>
+        <th>Location</th>
+        <th>Parameters</th>
+        <th>Result</th>
+        <th>Severity</th>
+        <th>Meter Status</th>
+        <th>FIR Status</th>
+        <th>Actions</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in reports %}
+      <tr id="row-{{ r.id }}">
+        <td style="color:var(--muted);font-size:11px;">{{ r.id }}</td>
+        <td>
+          <div style="font-weight:700;font-size:13px;">{{ r.house_no }}</div>
+          <div style="font-size:11px;color:var(--muted);">{{ r.consumer_name or '—' }}</div>
+        </td>
+        <td style="font-size:11px;color:var(--muted);">
+          {{ r.district }}<br>{{ r.village or '—' }}
+        </td>
+        <td style="font-size:11px;color:var(--muted);">
+          {{ r.voltage }}V / {{ r.current }}A<br>{{ r.power }}W / {{ r.time }}h
+        </td>
+        <td>
+          {% if r.result=='THEFT_DETECTED' %}
+          <span class="badge badge-theft">⚠️ Theft</span>
+          {% else %}
+          <span class="badge badge-safe">✅ Safe</span>
+          {% endif %}
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;">{{ r.confidence }}%</div>
+        </td>
+        <td>
+          {% if r.severity=='CRITICAL' %}<span class="badge badge-crit">CRITICAL</span>
+          {% elif r.severity=='HIGH' %}<span class="badge badge-high">HIGH</span>
+          {% elif r.severity=='MODERATE' %}<span class="badge badge-mod">MOD</span>
+          {% else %}—{% endif %}
+        </td>
+
+        <!-- METER STATUS -->
+        <td>
+          {% if r.meter_status=='cut' %}
+          <span class="badge badge-theft">🔌 Cut</span>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;">{{ r.meter_cut_by }}<br>{{ r.meter_cut_at[:10] if r.meter_cut_at else '' }}</div>
+          {% else %}
+          <span class="badge badge-safe">✅ Active</span>
+          {% endif %}
+        </td>
+
+        <!-- FIR STATUS -->
+        <td>
+          {% if r.fir_status=='filed' %}
+          <span class="badge badge-mod">📋 Filed</span>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;">#{{ r.fir_number }}<br>{{ r.fir_filed_by }}</div>
+          {% else %}
+          <span style="font-size:11px;color:var(--muted);">None</span>
+          {% endif %}
+        </td>
+
+        <!-- ACTION BUTTONS -->
+        <td>
+          {% if r.result=='THEFT_DETECTED' %}
+          <div style="display:flex;flex-direction:column;gap:5px;min-width:130px;">
+            {% if r.meter_status != 'cut' %}
+            <button onclick="openCutModal({{ r.id }}, '{{ r.house_no }}', '{{ r.consumer_name }}')"
+              style="padding:5px 10px;border:none;border-radius:5px;background:rgba(230,57,70,0.2);
+                     color:#FF7A7A;border:1px solid rgba(230,57,70,0.35);font-size:11px;font-weight:600;
+                     cursor:pointer;font-family:'Syne',sans-serif;">
+              🔌 Cut Meter
+            </button>
+            {% else %}
+            <span style="font-size:11px;color:var(--muted);padding:5px 0;">Meter cut ✓</span>
+            {% endif %}
+            {% if r.fir_status != 'filed' %}
+            <button onclick="openFirModal({{ r.id }}, '{{ r.house_no }}', '{{ r.consumer_name }}')"
+              style="padding:5px 10px;border:none;border-radius:5px;background:rgba(124,58,237,0.15);
+                     color:#C4B5FD;border:1px solid rgba(124,58,237,0.3);font-size:11px;font-weight:600;
+                     cursor:pointer;font-family:'Syne',sans-serif;">
+              📋 File FIR
+            </button>
+            {% else %}
+            <span style="font-size:11px;color:var(--muted);padding:5px 0;">FIR filed ✓</span>
+            {% endif %}
+          </div>
+          {% else %}
+          <span style="font-size:11px;color:var(--muted);">—</span>
+          {% endif %}
+        </td>
+
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap;">
+          {{ r.created_at[:16] if r.created_at else '—' }}<br>
+          <span style="color:rgba(255,255,255,0.3);">{{ r.reported_by }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div style="padding:60px;text-align:center;color:var(--muted);">
+    <div style="font-size:40px;margin-bottom:12px;opacity:0.3;">📋</div>
+    No reports match your filter. <a href="/predict_page" style="color:var(--cyan);">Run a detection →</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── CUT METER MODAL ── -->
+<div id="rCutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:#0B1929;border:1px solid rgba(230,57,70,0.4);border-radius:16px;padding:32px;width:400px;max-width:90vw;">
+    <div style="font-size:28px;text-align:center;margin-bottom:10px;">🔌</div>
+    <h3 style="font-family:'Syne',sans-serif;color:#FF6B6B;text-align:center;margin-bottom:6px;">Cut Meter Connection</h3>
+    <p id="rCutDesc" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px;"></p>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>Reason / Notes</label>
+      <textarea id="rCutNotes" rows="3" placeholder="Reason for disconnection..."
+        style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-size:13px;padding:10px;font-family:'DM Sans',sans-serif;resize:none;outline:none;"></textarea>
+    </div>
+    <div id="rCutMsg" style="display:none;margin-bottom:10px;padding:8px;border-radius:6px;font-size:12px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button onclick="document.getElementById('rCutModal').style.display='none'" class="btn" style="background:rgba(255,255,255,0.06);color:var(--muted);">Cancel</button>
+      <button id="rCutConfirm" onclick="doReportCut()"
+        style="padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#E63946,#C1121F);color:#fff;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;">
+        ✂️ Confirm Cut
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── FIR MODAL ── -->
+<div id="rFirModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:#0B1929;border:1px solid rgba(124,58,237,0.4);border-radius:16px;padding:32px;width:400px;max-width:90vw;">
+    <div style="font-size:28px;text-align:center;margin-bottom:10px;">📋</div>
+    <h3 style="font-family:'Syne',sans-serif;color:#C4B5FD;text-align:center;margin-bottom:6px;">File FIR Case</h3>
+    <p id="rFirDesc" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px;"></p>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>FIR Number * <span style="color:#FF7A7A;">(required)</span></label>
+      <input type="text" id="rFirNumber" placeholder="e.g. FIR/2024/NAS/0142">
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>FIR Notes</label>
+      <textarea id="rFirNotes" rows="2" placeholder="Police station, officer name..."
+        style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-size:13px;padding:10px;font-family:'DM Sans',sans-serif;resize:none;outline:none;"></textarea>
+    </div>
+    <div id="rFirMsg" style="display:none;margin-bottom:10px;padding:8px;border-radius:6px;font-size:12px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button onclick="document.getElementById('rFirModal').style.display='none'" class="btn" style="background:rgba(255,255,255,0.06);color:var(--muted);">Cancel</button>
+      <button id="rFirConfirm" onclick="doReportFir()"
+        style="padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;">
+        📋 File FIR
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let _activeReportId = null;
+
+function openCutModal(id, house, consumer) {
+  _activeReportId = id;
+  document.getElementById('rCutDesc').innerHTML = `Disconnect electricity supply to <strong style="color:#fff">${house} (${consumer})</strong>. This action will be logged.`;
+  document.getElementById('rCutNotes').value = '';
+  document.getElementById('rCutMsg').style.display = 'none';
+  document.getElementById('rCutModal').style.display = 'flex';
+}
+
+function openFirModal(id, house, consumer) {
+  _activeReportId = id;
+  document.getElementById('rFirDesc').innerHTML = `File FIR for <strong style="color:#fff">${house} (${consumer})</strong>.`;
+  document.getElementById('rFirNumber').value = '';
+  document.getElementById('rFirNotes').value = '';
+  document.getElementById('rFirMsg').style.display = 'none';
+  document.getElementById('rFirModal').style.display = 'flex';
+}
+
+async function doReportCut() {
+  const notes = document.getElementById('rCutNotes').value;
+  const btn = document.getElementById('rCutConfirm');
+  btn.textContent = '⏳ Processing...'; btn.disabled = true;
+  const fd = new FormData(); fd.append('notes', notes);
+  const res  = await fetch(`/cut_meter/${_activeReportId}`, {method:'POST',body:fd});
+  const data = await res.json();
+  const msg = document.getElementById('rCutMsg');
+  msg.style.display = 'block';
+  if (data.success) {
+    msg.style.background = 'rgba(6,214,160,0.1)'; msg.style.color = '#06D6A0';
+    msg.innerHTML = `✅ ${data.msg}`;
+    setTimeout(() => { document.getElementById('rCutModal').style.display='none'; location.reload(); }, 1500);
+  } else {
+    msg.style.background = 'rgba(230,57,70,0.1)'; msg.style.color = '#FF8A8A';
+    msg.innerHTML = `⚠️ ${data.msg}`;
+  }
+  btn.textContent = '✂️ Confirm Cut'; btn.disabled = false;
+}
+
+async function doReportFir() {
+  const firNum = document.getElementById('rFirNumber').value.trim();
+  const notes  = document.getElementById('rFirNotes').value;
+  const msg = document.getElementById('rFirMsg');
+  if (!firNum) {
+    msg.style.display='block'; msg.style.background='rgba(230,57,70,0.1)';
+    msg.style.color='#FF8A8A'; msg.textContent='⚠️ FIR number is required.'; return;
+  }
+  const btn = document.getElementById('rFirConfirm');
+  btn.textContent = '⏳ Filing...'; btn.disabled = true;
+  const fd = new FormData(); fd.append('fir_number',firNum); fd.append('notes',notes);
+  const res  = await fetch(`/file_fir/${_activeReportId}`, {method:'POST',body:fd});
+  const data = await res.json();
+  msg.style.display = 'block';
+  if (data.success) {
+    msg.style.background='rgba(124,58,237,0.1)'; msg.style.color='#C4B5FD';
+    msg.innerHTML = `✅ ${data.msg}`;
+    setTimeout(() => { document.getElementById('rFirModal').style.display='none'; location.reload(); }, 1500);
+  } else {
+    msg.style.background='rgba(230,57,70,0.1)'; msg.style.color='#FF8A8A';
+    msg.innerHTML = `⚠️ ${data.msg}`;
+  }
+  btn.textContent = '📋 File FIR'; btn.disabled = false;
+}
+</script>
+{% endblock %}

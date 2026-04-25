@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% block title %}Detect Theft{% endblock %}
+{% block page_title %}Theft Detection{% endblock %}
+{% block page_subtitle %}AI-powered electricity theft analysis{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="alert alert-error">⚠️ {{ error }}</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+
+<!-- ── FORM ── -->
+<div class="section-box">
+  <div class="section-header"><h3>⚡ Meter Reading Input</h3></div>
+  <div class="section-body">
+    <form method="post" action="/predict" id="predict-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>House Number *</label>
+          <input type="text" name="house_no" placeholder="e.g. H-1042" required value="{{ house_no or '' }}">
+        </div>
+        <div class="form-group">
+          <label>Consumer Name *</label>
+          <input type="text" name="consumer_name" placeholder="e.g. Ramesh Patil" required value="{{ consumer or '' }}">
+        </div>
+      </div>
+      <div style="height:1px;background:var(--border);margin:12px 0;"></div>
+      <p style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:12px;">Electrical Parameters</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Voltage (V)</label>
+          <input type="number" name="voltage" step="0.1" placeholder="220.0" required value="{{ voltage or '' }}">
+        </div>
+        <div class="form-group">
+          <label>Current (A)</label>
+          <input type="number" name="current" step="0.01" placeholder="5.5" required value="{{ current or '' }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Power (W)</label>
+          <input type="number" name="power" step="1" placeholder="1210" required value="{{ power or '' }}">
+        </div>
+        <div class="form-group">
+          <label>Time (hours)</label>
+          <input type="number" name="time" step="0.1" placeholder="10.0" required value="{{ time or '' }}">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group">
+          <label>Meter Difference (kWh)</label>
+          <input type="number" name="meter_diff" step="0.01" placeholder="52.0" required value="{{ meter_diff or '' }}">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;padding:13px;" id="submit-btn">
+        🔍 Run AI Detection
+      </button>
+    </form>
+
+    <!-- Normal ranges hint -->
+    <div style="margin-top:18px;background:rgba(0,180,216,0.05);border:1px solid rgba(0,180,216,0.12);border-radius:10px;padding:14px;">
+      <div style="font-size:10px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Normal Ranges Reference</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px;color:var(--muted);line-height:1.9;">
+        <span>Voltage: 210–240 V</span><span>Current: 3–10 A</span>
+        <span>Power: 500–3000 W</span><span>Time: 8–24 hrs</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── RESULT ── -->
+<div>
+{% if result %}
+<div class="section-box" style="border-color:{% if result=='THEFT_DETECTED' %}rgba(230,57,70,0.45){% else %}rgba(6,214,160,0.35){% endif %};">
+  <div class="section-header" style="background:{% if result=='THEFT_DETECTED' %}rgba(230,57,70,0.08){% else %}rgba(6,214,160,0.06){% endif %};">
+    <h3>{% if result=='THEFT_DETECTED' %}⚠️ Detection Result{% else %}✅ Detection Result{% endif %}</h3>
+    <span style="font-size:12px;color:var(--muted)">AI Confidence: <strong style="color:{% if result=='THEFT_DETECTED' %}#FF7A7A{% else %}var(--green){% endif %}">{{ confidence }}%</strong></span>
+  </div>
+  <div class="section-body">
+
+    <!-- Verdict banner -->
+    <div style="text-align:center;padding:18px 0 20px;border-bottom:1px solid var(--border);margin-bottom:20px;">
+      {% if result=='THEFT_DETECTED' %}
+      <div style="font-size:44px;margin-bottom:10px;animation:pulse 1.5s ease infinite;">🚨</div>
+      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#FF6B6B;margin-bottom:8px;">ELECTRICITY THEFT DETECTED</div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;">
+        <span class="badge badge-crit">{{ severity }} RISK</span>
+        {% if theft_type %}<span class="badge badge-high">{{ theft_type }}</span>{% endif %}
+      </div>
+      {% else %}
+      <div style="font-size:44px;margin-bottom:10px;">✅</div>
+      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--green);margin-bottom:8px;">NORMAL USAGE — SAFE</div>
+      <span class="badge badge-safe">No Suspicious Activity</span>
+      {% endif %}
+      <div style="margin-top:14px;text-align:left;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:11px;color:var(--muted);">Confidence Score</span>
+          <span style="font-size:12px;font-weight:700;color:{% if result=='THEFT_DETECTED' %}#FF7A7A{% else %}var(--green){% endif %}">{{ confidence }}%</span>
+        </div>
+        <div style="height:7px;background:rgba(255,255,255,0.08);border-radius:100px;overflow:hidden;">
+          <div style="height:100%;width:{{ confidence }}%;background:{% if result=='THEFT_DETECTED' %}linear-gradient(90deg,#E63946,#FF6B6B){% else %}linear-gradient(90deg,#06D6A0,#4DFFC4){% endif %};border-radius:100px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Consumer info -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;">
+      <div style="background:rgba(255,255,255,0.03);padding:10px 12px;border-radius:8px;border:1px solid var(--border);">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">House No.</div>
+        <div style="font-size:14px;font-weight:700;">{{ house_no }}</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);padding:10px 12px;border-radius:8px;border:1px solid var(--border);">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Consumer</div>
+        <div style="font-size:14px;font-weight:700;">{{ consumer }}</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);padding:10px 12px;border-radius:8px;border:1px solid var(--border);">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Voltage / Current</div>
+        <div style="font-size:13px;">{{ voltage }}V &nbsp;/&nbsp; {{ current }}A</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);padding:10px 12px;border-radius:8px;border:1px solid var(--border);">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Power / Meter Diff</div>
+        <div style="font-size:13px;">{{ power }}W &nbsp;/&nbsp; {{ meter_diff }} kWh</div>
+      </div>
+    </div>
+
+    <!-- Flagged reasons -->
+    {% if reasons %}
+    <div style="margin-bottom:20px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">⚠️ Flagged Anomalies</div>
+      {% for reason in reasons %}
+      <div style="padding:8px 12px;background:rgba(230,57,70,0.07);border:1px solid rgba(230,57,70,0.18);border-radius:6px;margin-bottom:5px;font-size:12px;color:rgba(255,255,255,0.8);">{{ reason }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ══════════════════════════════════ -->
+    <!-- ACTION BUTTONS (Theft only)        -->
+    <!-- ══════════════════════════════════ -->
+    {% if result == 'THEFT_DETECTED' and report_id %}
+    <div style="border-top:1px solid var(--border);padding-top:18px;margin-top:4px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px;">🔧 Enforcement Actions</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+
+        <!-- CUT METER BUTTON -->
+        <div>
+          <button onclick="openModal('cutModal')" id="cutMeterBtn"
+            style="width:100%;padding:11px;border:none;border-radius:9px;
+                   background:linear-gradient(135deg,#E63946,#C1121F);
+                   color:#fff;font-size:13px;font-weight:700;cursor:pointer;
+                   font-family:'Syne',sans-serif;display:flex;align-items:center;
+                   justify-content:center;gap:8px;transition:all 0.2s;"
+            onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(230,57,70,0.5)'"
+            onmouseout="this.style.transform='';this.style.boxShadow=''">
+            🔌 Cut Meter Connection
+          </button>
+          <div id="cutStatus" style="display:none;margin-top:6px;padding:8px 10px;background:rgba(230,57,70,0.1);border:1px solid rgba(230,57,70,0.3);border-radius:6px;font-size:11px;color:#FF8A8A;"></div>
+        </div>
+
+        <!-- FILE FIR BUTTON -->
+        <div>
+          <button onclick="openModal('firModal')" id="fileFirBtn"
+            style="width:100%;padding:11px;border:none;border-radius:9px;
+                   background:linear-gradient(135deg,#7C3AED,#5B21B6);
+                   color:#fff;font-size:13px;font-weight:700;cursor:pointer;
+                   font-family:'Syne',sans-serif;display:flex;align-items:center;
+                   justify-content:center;gap:8px;transition:all 0.2s;"
+            onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(124,58,237,0.5)'"
+            onmouseout="this.style.transform='';this.style.boxShadow=''">
+            📋 File FIR Case
+          </button>
+          <div id="firStatus" style="display:none;margin-top:6px;padding:8px 10px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);border-radius:6px;font-size:11px;color:#C4B5FD;"></div>
+        </div>
+
+      </div>
+
+      <!-- Download Excel -->
+      <a href="/download_report" style="display:flex;align-items:center;justify-content:center;gap:8px;
+         padding:10px;border-radius:9px;background:rgba(0,180,216,0.12);
+         border:1px solid rgba(0,180,216,0.25);color:var(--cyan);
+         font-size:13px;font-weight:600;text-decoration:none;font-family:'Syne',sans-serif;
+         transition:all 0.2s;"
+         onmouseover="this.style.background='rgba(0,180,216,0.2)'"
+         onmouseout="this.style.background='rgba(0,180,216,0.12)'">
+        📥 Download Full Excel Report
+      </a>
+    </div>
+
+    <!-- ══ CUT METER MODAL ══ -->
+    <div id="cutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;">
+      <div style="background:#0B1929;border:1px solid rgba(230,57,70,0.4);border-radius:16px;padding:32px;width:420px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+        <div style="font-size:32px;text-align:center;margin-bottom:12px;">🔌</div>
+        <h3 style="font-family:'Syne',sans-serif;color:#FF6B6B;text-align:center;margin-bottom:6px;">Cut Meter Connection</h3>
+        <p style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:20px;">This will disconnect the electricity supply to <strong style="color:#fff;">{{ house_no }} ({{ consumer }})</strong>. This action will be logged.</p>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Reason / Notes (optional)</label>
+          <textarea id="cutNotes" rows="3" placeholder="e.g. Direct hooking confirmed on site inspection..."
+            style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-size:13px;padding:10px;font-family:'DM Sans',sans-serif;resize:none;outline:none;"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button onclick="closeModal('cutModal')" class="btn" style="background:rgba(255,255,255,0.06);color:var(--muted);">Cancel</button>
+          <button onclick="doCutMeter({{ report_id }})"
+            style="padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#E63946,#C1121F);color:#fff;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;">
+            ✂️ Confirm Cut
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ FIR MODAL ══ -->
+    <div id="firModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;">
+      <div style="background:#0B1929;border:1px solid rgba(124,58,237,0.4);border-radius:16px;padding:32px;width:420px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+        <div style="font-size:32px;text-align:center;margin-bottom:12px;">📋</div>
+        <h3 style="font-family:'Syne',sans-serif;color:#C4B5FD;text-align:center;margin-bottom:6px;">File FIR Case</h3>
+        <p style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:20px;">Register a police FIR for <strong style="color:#fff;">{{ house_no }} ({{ consumer }})</strong>. Enter the FIR number from the police station.</p>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>FIR Number * <span style="color:#FF7A7A;">(required)</span></label>
+          <input type="text" id="firNumber" placeholder="e.g. FIR/2024/NAS/0142" style="width:100%;">
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>FIR Notes / Details</label>
+          <textarea id="firNotes" rows="3" placeholder="e.g. Filed at Nashik City Police Station, officer: Ramesh Jadhav..."
+            style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-size:13px;padding:10px;font-family:'DM Sans',sans-serif;resize:none;outline:none;"></textarea>
+        </div>
+        <div id="firError" style="display:none;color:#FF8A8A;font-size:12px;margin-bottom:10px;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button onclick="closeModal('firModal')" class="btn" style="background:rgba(255,255,255,0.06);color:var(--muted);">Cancel</button>
+          <button onclick="doFileFIR({{ report_id }})"
+            style="padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;">
+            📋 File FIR
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {% else %}
+    <!-- Download only (safe result) -->
+    <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px;">
+      <a href="/download_report" style="display:flex;align-items:center;justify-content:center;gap:8px;
+         padding:10px;border-radius:9px;background:rgba(0,180,216,0.1);
+         border:1px solid rgba(0,180,216,0.2);color:var(--cyan);
+         font-size:13px;font-weight:600;text-decoration:none;font-family:'Syne',sans-serif;">
+        📥 Download Excel Report
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% else %}
+<!-- Empty state -->
+<div class="section-box">
+  <div class="section-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;">
+    <div style="font-size:56px;margin-bottom:16px;opacity:0.2;">🔍</div>
+    <div style="font-family:'Syne',sans-serif;font-size:16px;color:var(--muted);margin-bottom:8px;">No Analysis Yet</div>
+    <p style="font-size:13px;color:var(--muted);max-width:240px;line-height:1.7;">Fill in the meter readings on the left and click "Run AI Detection" to get the result with enforcement options.</p>
+    <div style="margin-top:24px;display:flex;flex-direction:column;gap:8px;width:100%;">
+      <div style="padding:10px 14px;background:rgba(230,57,70,0.07);border:1px solid rgba(230,57,70,0.18);border-radius:8px;font-size:12px;color:rgba(255,180,180,0.9);display:flex;align-items:center;gap:8px;">
+        🔌 <span>If theft detected — Cut Meter Connection instantly</span>
+      </div>
+      <div style="padding:10px 14px;background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.18);border-radius:8px;font-size:12px;color:rgba(196,181,253,0.9);display:flex;align-items:center;gap:8px;">
+        📋 <span>If theft detected — File FIR Case with FIR number</span>
+      </div>
+      <div style="padding:10px 14px;background:rgba(0,180,216,0.07);border:1px solid rgba(0,180,216,0.15);border-radius:8px;font-size:12px;color:rgba(0,180,216,0.9);display:flex;align-items:center;gap:8px;">
+        📥 <span>Download Excel report with all details & actions taken</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+</div>
+</div>
+
+<style>
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openModal(id) {
+  document.getElementById(id).style.display = 'flex';
+}
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+// Close modal on backdrop click
+document.addEventListener('click', function(e) {
+  ['cutModal','firModal'].forEach(id => {
+    const modal = document.getElementById(id);
+    if (modal && e.target === modal) closeModal(id);
+  });
+});
+
+async function doCutMeter(reportId) {
+  const notes = document.getElementById('cutNotes').value;
+  const btn = event.target;
+  btn.textContent = '⏳ Processing...';
+  btn.disabled = true;
+
+  const fd = new FormData();
+  fd.append('notes', notes);
+
+  try {
+    const res  = await fetch(`/cut_meter/${reportId}`, {method:'POST', body:fd});
+    const data = await res.json();
+    closeModal('cutModal');
+    const statusEl = document.getElementById('cutStatus');
+    statusEl.style.display = 'block';
+    if (data.success) {
+      statusEl.style.background = 'rgba(6,214,160,0.1)';
+      statusEl.style.borderColor = 'rgba(6,214,160,0.3)';
+      statusEl.style.color = '#06D6A0';
+      statusEl.innerHTML = `✅ ${data.msg}<br><span style="opacity:0.7;">By: ${data.cut_by} | ${data.cut_at}</span>`;
+      document.getElementById('cutMeterBtn').disabled = true;
+      document.getElementById('cutMeterBtn').style.opacity = '0.5';
+      document.getElementById('cutMeterBtn').textContent = '✅ Meter Disconnected';
+    } else {
+      statusEl.innerHTML = `⚠️ ${data.msg}`;
+    }
+  } catch(e) {
+    alert('Error: ' + e);
+  }
+  btn.textContent = '✂️ Confirm Cut';
+  btn.disabled = false;
+}
+
+async function doFileFIR(reportId) {
+  const firNum = document.getElementById('firNumber').value.trim();
+  const notes  = document.getElementById('firNotes').value;
+  const errEl  = document.getElementById('firError');
+
+  if (!firNum) {
+    errEl.style.display = 'block';
+    errEl.textContent = '⚠️ Please enter the FIR number.';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const btn = event.target;
+  btn.textContent = '⏳ Filing...';
+  btn.disabled = true;
+
+  const fd = new FormData();
+  fd.append('fir_number', firNum);
+  fd.append('notes', notes);
+
+  try {
+    const res  = await fetch(`/file_fir/${reportId}`, {method:'POST', body:fd});
+    const data = await res.json();
+    closeModal('firModal');
+    const statusEl = document.getElementById('firStatus');
+    statusEl.style.display = 'block';
+    if (data.success) {
+      statusEl.style.background = 'rgba(124,58,237,0.1)';
+      statusEl.style.borderColor = 'rgba(124,58,237,0.3)';
+      statusEl.style.color = '#C4B5FD';
+      statusEl.innerHTML = `✅ ${data.msg}<br><span style="opacity:0.7;">FIR #${data.fir_number} | By: ${data.filed_by} | ${data.filed_at}</span>`;
+      document.getElementById('fileFirBtn').disabled = true;
+      document.getElementById('fileFirBtn').style.opacity = '0.5';
+      document.getElementById('fileFirBtn').textContent = '✅ FIR Filed';
+    } else {
+      statusEl.innerHTML = `⚠️ ${data.msg}`;
+    }
+  } catch(e) {
+    alert('Error: ' + e);
+  }
+  btn.textContent = '📋 File FIR';
+  btn.disabled = false;
+}
+
+// Auto-calc power when voltage & current change
+const vIn = document.querySelector('input[name="voltage"]');
+const cIn = document.querySelector('input[name="current"]');
+const pIn = document.querySelector('input[name="power"]');
+function calcPower() {
+  const v = parseFloat(vIn?.value), c = parseFloat(cIn?.value);
+  if (v && c && pIn && !pIn.value) pIn.value = Math.round(v * c * 0.95);
+}
+vIn?.addEventListener('blur', calcPower);
+cIn?.addEventListener('blur', calcPower);
+
+document.getElementById('predict-form')?.addEventListener('submit', function() {
+  const btn = document.getElementById('submit-btn');
+  btn.textContent = '⏳ Analyzing...'; btn.disabled = true;
+});
+</script>
+{% endblock %}

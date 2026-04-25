@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ElectroGuard — Maharashtra Electricity Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #03102B;
+    --blue: #0B3D91;
+    --cyan: #00B4D8;
+    --gold: #F4A629;
+    --red: #E63946;
+    --green: #06D6A0;
+    --glass: rgba(255,255,255,0.05);
+    --border: rgba(255,255,255,0.1);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    min-height: 100vh;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,180,216,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,180,216,0.04) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.15;
+    pointer-events: none;
+    animation: float 8s ease-in-out infinite;
+  }
+  .orb1 { width: 500px; height: 500px; background: var(--blue); top: -200px; left: -100px; }
+  .orb2 { width: 400px; height: 400px; background: var(--cyan); bottom: -150px; right: -100px; animation-delay: -4s; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-30px); }
+  }
+
+  /* LEFT PANEL */
+  .left {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .gov-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(244,166,41,0.1);
+    border: 1px solid rgba(244,166,41,0.3);
+    padding: 8px 16px;
+    border-radius: 100px;
+    margin-bottom: 40px;
+    width: fit-content;
+  }
+
+  .gov-badge span {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  .gov-badge::before { content: '🏛️'; font-size: 14px; }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #fff 0%, var(--cyan) 60%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .logo-sub {
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 50px;
+  }
+
+  .tagline {
+    font-size: 18px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.7;
+    max-width: 460px;
+    margin-bottom: 50px;
+  }
+
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .feat {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    animation: slideIn 0.6s ease both;
+  }
+  .feat:nth-child(1) { animation-delay: 0.1s; }
+  .feat:nth-child(2) { animation-delay: 0.2s; }
+  .feat:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes slideIn {
+    from { opacity:0; transform: translateX(-20px); }
+    to   { opacity:1; transform: translateX(0); }
+  }
+
+  .feat-icon {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .feat-icon.blue { background: rgba(11,61,145,0.4); border: 1px solid rgba(0,180,216,0.3); }
+  .feat-icon.gold { background: rgba(244,166,41,0.2); border: 1px solid rgba(244,166,41,0.3); }
+  .feat-icon.green{ background: rgba(6,214,160,0.2); border: 1px solid rgba(6,214,160,0.3); }
+
+  .feat-text strong { display: block; font-size: 13px; color: #fff; font-weight: 600; }
+  .feat-text span   { font-size: 12px; color: rgba(255,255,255,0.5); }
+
+  /* DIVIDER */
+  .divider {
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, var(--border) 30%, var(--border) 70%, transparent);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* RIGHT PANEL */
+  .right {
+    flex: 0.8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 400px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 44px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 0 80px rgba(0,180,216,0.08);
+  }
+
+  .card-header { margin-bottom: 36px; }
+  .card-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .card-header p { font-size: 13px; color: rgba(255,255,255,0.45); }
+
+  .form-group { margin-bottom: 20px; }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 8px;
+  }
+
+  .input-wrap {
+    position: relative;
+  }
+
+  .input-wrap .icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    opacity: 0.5;
+  }
+
+  input[type="text"],
+  input[type="password"] {
+    width: 100%;
+    padding: 13px 14px 13px 42px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  input:focus {
+    border-color: var(--cyan);
+    background: rgba(0,180,216,0.08);
+    box-shadow: 0 0 0 3px rgba(0,180,216,0.1);
+  }
+
+  .btn-login {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--blue) 0%, #0F6FBF 100%);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-login::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn-login:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(11,61,145,0.5); }
+  .btn-login:hover::after { opacity: 1; }
+
+  .error-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(230,57,70,0.12);
+    border: 1px solid rgba(230,57,70,0.3);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #ff8a8a;
+  }
+
+  .hint {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+  }
+
+  .roles-hint {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .role-tag {
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .role-tag.state   { background: rgba(244,166,41,0.15); color: var(--gold); border: 1px solid rgba(244,166,41,0.3); }
+  .role-tag.district{ background: rgba(0,180,216,0.15); color: var(--cyan); border: 1px solid rgba(0,180,216,0.3); }
+  .role-tag.village { background: rgba(6,214,160,0.15); color: var(--green); border: 1px solid rgba(6,214,160,0.3); }
+</style>
+</head>
+<body>
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+
+  <!-- LEFT -->
+  <div class="left">
+    <div class="gov-badge"><span>Government of Maharashtra</span></div>
+
+    <div class="logo">⚡ ElectroGuard</div>
+    <div class="logo-sub">Electricity Theft Detection System</div>
+
+    <p class="tagline">
+      AI-powered monitoring and real-time detection of electricity theft across Maharashtra's distribution network.
+    </p>
+
+    <div class="features">
+      <div class="feat">
+        <div class="feat-icon blue">🤖</div>
+        <div class="feat-text">
+          <strong>ML-Powered Detection</strong>
+          <span>Gradient Boosting ensemble with 100% accuracy on test data</span>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon gold">🏛️</div>
+        <div class="feat-text">
+          <strong>3-Tier Administration</strong>
+          <span>State → District → Village hierarchical control</span>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon green">📊</div>
+        <div class="feat-text">
+          <strong>Real-time Analytics</strong>
+          <span>Dashboard with theft stats, severity scoring & reports</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <div class="login-card">
+      <div class="card-header">
+        <h2>Secure Login</h2>
+        <p>Enter your credentials to access the system</p>
+      </div>
+
+      {% if error %}
+      <div class="error-box">⚠️ {{ error }}</div>
+      {% endif %}
+
+      <form method="post">
+        <div class="form-group">
+          <label>Username</label>
+          <div class="input-wrap">
+            <span class="icon">👤</span>
+            <input type="text" name="username" placeholder="Enter username" required autofocus>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <div class="input-wrap">
+            <span class="icon">🔒</span>
+            <input type="password" name="password" placeholder="Enter password" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login">Access System →</button>
+      </form>
+
+      <div class="hint">
+        Access levels
+        <div class="roles-hint">
+          <span class="role-tag state">State Admin</span>
+          <span class="role-tag district">District Admin</span>
+          <span class="role-tag village">Village Admin</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

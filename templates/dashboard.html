@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}
+  {% if session.role=='state' %}Maharashtra State Overview
+  {% elif session.role=='district' %}{{ session.district }} District Overview
+  {% else %}{{ session.village }} Village Overview{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<!-- STAT CARDS -->
+<div class="stat-grid" style="grid-template-columns:repeat(6,1fr);">
+  <div class="stat-card blue"><div class="stat-icon">🏠</div><div class="label">Households</div><div class="value" style="font-size:28px;">{{ stats.total_households }}</div><div class="sub">Registered</div></div>
+  <div class="stat-card red"><div class="stat-icon">⚠️</div><div class="label">Theft Cases</div><div class="value" style="font-size:28px;">{{ stats.theft_cases }}</div><div class="sub">AI flagged</div></div>
+  <div class="stat-card green"><div class="stat-icon">✅</div><div class="label">Safe</div><div class="value" style="font-size:28px;">{{ stats.safe_cases }}</div><div class="sub">Normal usage</div></div>
+  <div class="stat-card" style="background:rgba(124,58,237,0.1);border-color:rgba(124,58,237,0.2);">
+    <div class="stat-icon">📋</div><div class="label">FIRs Filed</div>
+    <div class="value" style="font-size:28px;color:#C4B5FD;">{{ stats.fir_filed }}</div><div class="sub">Police cases</div></div>
+  <div class="stat-card" style="background:rgba(230,57,70,0.08);border-color:rgba(230,57,70,0.2);">
+    <div class="stat-icon">🔌</div><div class="label">Meters Cut</div>
+    <div class="value" style="font-size:28px;color:#FF7A7A;">{{ stats.meters_cut }}</div><div class="sub">Disconnected</div></div>
+  {% if session.role=='state' %}
+  <div class="stat-card gold"><div class="stat-icon">👥</div><div class="label">Admins</div><div class="value" style="font-size:28px;">{{ stats.total_admins }}</div><div class="sub">{{ stats.district_admins }}D · {{ stats.village_admins }}V</div></div>
+  {% else %}
+  <div class="stat-card gold"><div class="stat-icon">📊</div><div class="label">Total Checks</div><div class="value" style="font-size:28px;">{{ stats.theft_cases + stats.safe_cases }}</div><div class="sub">Detections run</div></div>
+  {% endif %}
+</div>
+
+<!-- THEFT RATE BAR -->
+{% set total_checks = stats.theft_cases + stats.safe_cases %}
+{% if total_checks > 0 %}
+{% set theft_pct = ((stats.theft_cases / total_checks) * 100) | round(1) %}
+<div class="section-box" style="margin-bottom:20px;">
+  <div class="section-header">
+    <h3>📈 Theft Rate</h3>
+    <span style="font-size:12px;color:var(--muted);">Based on {{ total_checks }} detections</span>
+  </div>
+  <div class="section-body">
+    <div style="display:flex;align-items:center;gap:24px;">
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+          <span style="font-size:12px;color:var(--muted);">Theft Rate</span>
+          <span style="font-weight:700;color:{% if theft_pct>40 %}#FF7A7A{% elif theft_pct>20 %}var(--gold){% else %}var(--green){% endif %};">{{ theft_pct }}%</span>
+        </div>
+        <div style="height:8px;background:rgba(255,255,255,0.07);border-radius:100px;overflow:hidden;">
+          <div style="height:100%;width:{{ theft_pct }}%;background:linear-gradient(90deg,#E63946,#FF6B6B);border-radius:100px;"></div>
+        </div>
+        <div style="display:flex;gap:20px;margin-top:10px;">
+          <span style="font-size:12px;color:var(--muted);">🔌 Meters cut: <strong style="color:#FF7A7A;">{{ stats.meters_cut }}</strong></span>
+          <span style="font-size:12px;color:var(--muted);">📋 FIRs filed: <strong style="color:#C4B5FD;">{{ stats.fir_filed }}</strong></span>
+        </div>
+      </div>
+      <a href="/predict_page" class="btn btn-primary" style="flex-shrink:0;">⚡ New Detection</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- CRITICAL PENDING CASES -->
+{% if critical_cases %}
+<div class="section-box" style="margin-bottom:20px;border-color:rgba(230,57,70,0.3);">
+  <div class="section-header" style="background:rgba(230,57,70,0.06);">
+    <h3>🚨 Pending Actions — Theft Cases Without Meter Cut</h3>
+    <span style="font-size:12px;color:#FF7A7A;">{{ critical_cases|length }} need attention</span>
+  </div>
+  <table class="eg-table">
+    <thead>
+      <tr><th>House / Consumer</th><th>Location</th><th>Severity</th><th>Theft Type</th><th>FIR</th><th>Reported By</th><th>Date</th><th>Quick Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for r in critical_cases %}
+      <tr>
+        <td><strong>{{ r.house_no }}</strong><div style="font-size:11px;color:var(--muted);">{{ r.consumer_name }}</div></td>
+        <td style="font-size:11px;color:var(--muted);">{{ r.district }}<br>{{ r.village or '—' }}</td>
+        <td>{% if r.severity=='CRITICAL' %}<span class="badge badge-crit">CRITICAL</span>
+            {% elif r.severity=='HIGH' %}<span class="badge badge-high">HIGH</span>
+            {% else %}<span class="badge badge-mod">MOD</span>{% endif %}</td>
+        <td style="font-size:11px;color:var(--muted);">{{ r.theft_type or '—' }}</td>
+        <td>{% if r.fir_status=='filed' %}<span class="badge badge-mod">#{{ r.fir_number }}</span>{% else %}<span style="font-size:11px;color:var(--muted);">None</span>{% endif %}</td>
+        <td style="font-size:11px;color:var(--muted);">{{ r.reported_by }}</td>
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap;">{{ r.created_at[:10] if r.created_at else '—' }}</td>
+        <td>
+          <div style="display:flex;gap:5px;">
+            <button onclick="quickCut({{ r.id }}, '{{ r.house_no }}', '{{ r.consumer_name }}')"
+              style="padding:4px 10px;border:none;border-radius:5px;background:rgba(230,57,70,0.2);color:#FF7A7A;border:1px solid rgba(230,57,70,0.3);font-size:11px;font-weight:600;cursor:pointer;">
+              🔌 Cut
+            </button>
+            {% if r.fir_status != 'filed' %}
+            <button onclick="quickFir({{ r.id }}, '{{ r.house_no }}', '{{ r.consumer_name }}')"
+              style="padding:4px 10px;border:none;border-radius:5px;background:rgba(124,58,237,0.15);color:#C4B5FD;border:1px solid rgba(124,58,237,0.25);font-size:11px;font-weight:600;cursor:pointer;">
+              📋 FIR
+            </button>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- RECENT REPORTS -->
+<div class="section-box" style="margin-bottom:20px;">
+  <div class="section-header">
+    <h3>🕒 Recent Detections</h3>
+    <a href="/reports" style="font-size:12px;color:var(--cyan);text-decoration:none;">View all →</a>
+  </div>
+  {% if recent_reports %}
+  <table class="eg-table">
+    <thead>
+      <tr><th>House</th><th>Consumer</th><th>Location</th><th>Result</th><th>Confidence</th><th>Severity</th><th>Meter</th><th>FIR</th><th>By</th><th>Date</th></tr>
+    </thead>
+    <tbody>
+      {% for r in recent_reports %}
+      <tr>
+        <td><strong>{{ r.house_no }}</strong></td>
+        <td style="font-size:12px;">{{ r.consumer_name or '—' }}</td>
+        <td style="font-size:11px;color:var(--muted);">{{ r.district }}{% if r.village %} › {{ r.village }}{% endif %}</td>
+        <td>{% if r.result=='THEFT_DETECTED' %}<span class="badge badge-theft">⚠️ Theft</span>{% else %}<span class="badge badge-safe">✅ Safe</span>{% endif %}</td>
+        <td style="font-size:12px;">{{ r.confidence }}%</td>
+        <td>{% if r.severity=='CRITICAL' %}<span class="badge badge-crit">CRIT</span>{% elif r.severity=='HIGH' %}<span class="badge badge-high">HIGH</span>{% elif r.severity=='MODERATE' %}<span class="badge badge-mod">MOD</span>{% else %}—{% endif %}</td>
+        <td>{% if r.meter_status=='cut' %}<span class="badge badge-theft">🔌 Cut</span>{% else %}<span class="badge badge-safe">Active</span>{% endif %}</td>
+        <td>{% if r.fir_status=='filed' %}<span class="badge badge-mod">📋 #{{ r.fir_number }}</span>{% else %}<span style="font-size:11px;color:var(--muted);">—</span>{% endif %}</td>
+        <td style="font-size:11px;color:var(--muted);">{{ r.reported_by }}</td>
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap;">{{ r.created_at[:10] if r.created_at else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:40px;text-align:center;color:var(--muted);">No detections yet. <a href="/predict_page" style="color:var(--cyan);">Run your first detection →</a></div>
+  {% endif %}
+</div>
+
+<!-- HOUSEHOLDS -->
+{% if houses %}
+<div class="section-box">
+  <div class="section-header"><h3>🏠 Registered Households</h3><span style="font-size:12px;color:var(--muted);">Showing up to 50</span></div>
+  <table class="eg-table">
+    <thead><tr><th>House No</th><th>Consumer</th><th>People</th><th>Appliances</th><th>Exp. Usage (kWh)</th><th>District</th><th>Village</th><th>Meter</th></tr></thead>
+    <tbody>
+      {% for h in houses %}
+      <tr>
+        <td><strong>{{ h.house_no }}</strong></td>
+        <td>{{ h.consumer_name or '—' }}</td>
+        <td>{{ h.people or '—' }}</td>
+        <td>{{ h.appliances or '—' }}</td>
+        <td>{{ h.expected_usage or '—' }}</td>
+        <td>{{ h.district }}</td>
+        <td>{{ h.village }}</td>
+        <td style="font-size:11px;color:var(--muted);">{{ h.meter_id or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Quick action modals (same as reports page) -->
+<div id="dCutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:#0B1929;border:1px solid rgba(230,57,70,0.4);border-radius:16px;padding:28px;width:380px;max-width:90vw;">
+    <h3 style="font-family:'Syne',sans-serif;color:#FF6B6B;margin-bottom:6px;">🔌 Cut Meter</h3>
+    <p id="dCutDesc" style="font-size:12px;color:var(--muted);margin-bottom:14px;"></p>
+    <textarea id="dCutNotes" rows="2" placeholder="Reason..." style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-size:13px;padding:10px;resize:none;outline:none;font-family:'DM Sans',sans-serif;margin-bottom:12px;"></textarea>
+    <div id="dCutMsg" style="display:none;margin-bottom:10px;padding:8px;border-radius:6px;font-size:12px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button onclick="document.getElementById('dCutModal').style.display='none'" class="btn" style="background:rgba(255,255,255,0.06);color:var(--muted);">Cancel</button>
+      <button id="dCutBtn" onclick="doDashCut()" style="padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#E63946,#C1121F);color:#fff;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;">✂️ Confirm Cut</button>
+    </div>
+  </div>
+</div>
+
+<div id="dFirModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:#0B1929;border:1px solid rgba(124,58,237,0.4);border-radius:16px;padding:28px;width:380px;max-width:90vw;">
+    <h3 style="font-family:'Syne',sans-serif;color:#C4B5FD;margin-bottom:6px;">📋 File FIR</h3>
+    <p id="dFirDesc" style="font-size:12px;color:var(--muted);margin-bottom:14px;"></p>
+    <input type="text" id="dFirNum" placeholder="FIR Number *" style="width:100%;margin-bottom:8px;">
+    <textarea id="dFirNotes" rows="2" placeholder="Notes..." style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-size:13px;padding:10px;resize:none;outline:none;font-family:'DM Sans',sans-serif;margin-bottom:12px;"></textarea>
+    <div id="dFirMsg" style="display:none;margin-bottom:10px;padding:8px;border-radius:6px;font-size:12px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button onclick="document.getElementById('dFirModal').style.display='none'" class="btn" style="background:rgba(255,255,255,0.06);color:var(--muted);">Cancel</button>
+      <button id="dFirBtn" onclick="doDashFir()" style="padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;">📋 File FIR</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let _dRid = null;
+function quickCut(id, house, consumer) {
+  _dRid = id;
+  document.getElementById('dCutDesc').innerHTML = `Disconnect supply to <strong style="color:#fff">${house} — ${consumer}</strong>`;
+  document.getElementById('dCutNotes').value='';
+  document.getElementById('dCutMsg').style.display='none';
+  document.getElementById('dCutModal').style.display='flex';
+}
+function quickFir(id, house, consumer) {
+  _dRid = id;
+  document.getElementById('dFirDesc').innerHTML = `File FIR for <strong style="color:#fff">${house} — ${consumer}</strong>`;
+  document.getElementById('dFirNum').value='';
+  document.getElementById('dFirNotes').value='';
+  document.getElementById('dFirMsg').style.display='none';
+  document.getElementById('dFirModal').style.display='flex';
+}
+async function doDashCut() {
+  const btn=document.getElementById('dCutBtn'); btn.textContent='⏳...'; btn.disabled=true;
+  const fd=new FormData(); fd.append('notes',document.getElementById('dCutNotes').value);
+  const res=await fetch(`/cut_meter/${_dRid}`,{method:'POST',body:fd});
+  const data=await res.json();
+  const msg=document.getElementById('dCutMsg'); msg.style.display='block';
+  if(data.success){msg.style.color='#06D6A0';msg.style.background='rgba(6,214,160,0.1)';msg.textContent='✅ '+data.msg;setTimeout(()=>{location.reload()},1200);}
+  else{msg.style.color='#FF8A8A';msg.style.background='rgba(230,57,70,0.1)';msg.textContent='⚠️ '+data.msg;}
+  btn.textContent='✂️ Confirm Cut'; btn.disabled=false;
+}
+async function doDashFir() {
+  const firNum=document.getElementById('dFirNum').value.trim();
+  const msg=document.getElementById('dFirMsg'); msg.style.display='block';
+  if(!firNum){msg.style.color='#FF8A8A';msg.style.background='rgba(230,57,70,0.1)';msg.textContent='⚠️ FIR number required';return;}
+  const btn=document.getElementById('dFirBtn'); btn.textContent='⏳...'; btn.disabled=true;
+  const fd=new FormData(); fd.append('fir_number',firNum); fd.append('notes',document.getElementById('dFirNotes').value);
+  const res=await fetch(`/file_fir/${_dRid}`,{method:'POST',body:fd});
+  const data=await res.json();
+  if(data.success){msg.style.color='#C4B5FD';msg.style.background='rgba(124,58,237,0.1)';msg.textContent='✅ '+data.msg;setTimeout(()=>{location.reload()},1200);}
+  else{msg.style.color='#FF8A8A';msg.style.background='rgba(230,57,70,0.1)';msg.textContent='⚠️ '+data.msg;}
+  btn.textContent='📋 File FIR'; btn.disabled=false;
+}
+</script>
+{% endblock %}

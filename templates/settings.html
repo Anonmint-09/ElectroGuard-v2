@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block page_subtitle %}Manage your profile and account security{% endblock %}
+
+{% block content %}
+
+{% if msg %}
+<div class="alert alert-{{ msg[0] }}">
+  {% if msg[0] == 'success' %}✅{% else %}⚠️{% endif %} {{ msg[1] }}
+</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+  <!-- PROFILE -->
+  <div class="section-box">
+    <div class="section-header">
+      <h3>👤 Profile Information</h3>
+    </div>
+    <div class="section-body">
+      <form method="post">
+        <input type="hidden" name="action" value="update_profile">
+
+        <div class="form-row single">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" name="full_name" placeholder="Your full name"
+              value="{{ user_data.full_name or '' }}">
+          </div>
+        </div>
+
+        <div class="form-row single">
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" name="email" placeholder="you@mahaelectro.gov.in"
+              value="{{ user_data.email or '' }}">
+          </div>
+        </div>
+
+        <div class="form-row single">
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" name="phone" placeholder="+91 XXXXX XXXXX"
+              value="{{ user_data.phone or '' }}">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">
+          💾 Update Profile
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- CHANGE PASSWORD -->
+  <div class="section-box">
+    <div class="section-header">
+      <h3>🔐 Change Password</h3>
+    </div>
+    <div class="section-body">
+      <form method="post">
+        <input type="hidden" name="action" value="change_password">
+
+        <div class="form-row single">
+          <div class="form-group">
+            <label>Current Password</label>
+            <input type="password" name="old_password" placeholder="Enter current password" required>
+          </div>
+        </div>
+
+        <div class="form-row single">
+          <div class="form-group">
+            <label>New Password</label>
+            <input type="password" name="new_password" placeholder="Enter new password" required minlength="6">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">
+          🔒 Change Password
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ACCOUNT INFO -->
+  <div class="section-box">
+    <div class="section-header">
+      <h3>ℹ️ Account Info</h3>
+    </div>
+    <div class="section-body">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Username</span>
+          <span style="font-size:14px;font-weight:600;">{{ user_data.username }}</span>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Role</span>
+          <span class="role-badge rb-{{ session.role }}">
+            {% if session.role == 'state' %}State Admin
+            {% elif session.role == 'district' %}District Admin
+            {% else %}Village Admin{% endif %}
+          </span>
+        </div>
+
+        {% if user_data.district %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">District</span>
+          <span style="font-size:14px;">{{ user_data.district }}</span>
+        </div>
+        {% endif %}
+
+        {% if user_data.village %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Village</span>
+          <span style="font-size:14px;">{{ user_data.village }}</span>
+        </div>
+        {% endif %}
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Last Login</span>
+          <span style="font-size:13px;color:var(--muted);">{{ user_data.last_login[:16] if user_data.last_login else 'First login' }}</span>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
+          <span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Account Created</span>
+          <span style="font-size:13px;color:var(--muted);">{{ user_data.created_at[:10] if user_data.created_at else '—' }}</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SYSTEM INFO -->
+  <div class="section-box">
+    <div class="section-header">
+      <h3>🖥️ System Information</h3>
+    </div>
+    <div class="section-body">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:12px;color:var(--muted);">System</span>
+          <span style="font-size:13px;">ElectroGuard v2.0</span>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:12px;color:var(--muted);">ML Model</span>
+          <span class="badge badge-safe">✅ Active</span>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:12px;color:var(--muted);">Model Type</span>
+          <span style="font-size:13px;">GradientBoosting + RandomForest Ensemble</span>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:12px;color:var(--muted);">Training Accuracy</span>
+          <span style="font-size:13px;color:var(--green);font-weight:600;">100.00%</span>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
+          <span style="font-size:12px;color:var(--muted);">Department</span>
+          <span style="font-size:13px;">Maharashtra Electricity Board</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

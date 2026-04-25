@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Error{% endblock %}
+{% block page_title %}Access Error{% endblock %}
+{% block page_subtitle %}Something went wrong{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:center;min-height:50vh;">
+  <div style="text-align:center;max-width:400px;">
+    <div style="font-size:64px;margin-bottom:16px;">🚫</div>
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:#FF6B6B;margin-bottom:10px;">
+      {{ msg or 'Access Denied' }}
+    </div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:28px;">
+      You don't have permission to view this page, or the resource doesn't exist.
+    </p>
+    <a href="/dashboard" class="btn btn-primary">← Back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

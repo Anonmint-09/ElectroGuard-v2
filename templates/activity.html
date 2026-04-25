@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Activity Log{% endblock %}
+{% block page_title %}Activity Log{% endblock %}
+{% block page_subtitle %}All system actions and enforcement events{% endblock %}
+{% block content %}
+<div class="section-box">
+  <div class="section-header">
+    <h3>📜 System Activity Log</h3>
+    <span style="font-size:12px;color:var(--muted);">{{ logs|length }} entries</span>
+  </div>
+  {% if logs %}
+  <table class="eg-table">
+    <thead><tr><th>#</th><th>Action</th><th>Description</th><th>Performed By</th><th>Role</th><th>Location</th><th>Report ID</th><th>Time</th></tr></thead>
+    <tbody>
+      {% for l in logs %}
+      <tr>
+        <td style="color:var(--muted);font-size:11px;">{{ l.id }}</td>
+        <td>
+          <span class="badge
+            {% if l.action=='CUT_METER' %}badge-theft
+            {% elif l.action=='FILE_FIR' %}badge-mod
+            {% elif l.action=='PREDICTION' %}badge-high
+            {% elif l.action=='LOGIN' or l.action=='LOGOUT' %}badge-safe
+            {% else %}badge-mod{% endif %}">
+            {% if l.action=='CUT_METER' %}🔌 {{ l.action }}
+            {% elif l.action=='FILE_FIR' %}📋 {{ l.action }}
+            {% elif l.action=='PREDICTION' %}⚡ {{ l.action }}
+            {% elif l.action=='LOGIN' %}🔐 {{ l.action }}
+            {% elif l.action=='LOGOUT' %}🚪 {{ l.action }}
+            {% elif l.action=='CREATE_ADMIN' %}👤 {{ l.action }}
+            {% elif l.action=='DELETE_ADMIN' %}🗑️ {{ l.action }}
+            {% else %}{{ l.action }}{% endif %}
+          </span>
+        </td>
+        <td style="font-size:12px;max-width:280px;">{{ l.description }}</td>
+        <td style="font-size:12px;font-weight:600;">{{ l.performed_by }}</td>
+        <td><span class="role-badge rb-{{ l.role }}">{{ l.role }}</span></td>
+        <td style="font-size:11px;color:var(--muted);">{{ l.district or '—' }}{% if l.village %} › {{ l.village }}{% endif %}</td>
+        <td style="font-size:12px;color:var(--muted);">{% if l.report_id %}<a href="/reports" style="color:var(--cyan);">#{{ l.report_id }}</a>{% else %}—{% endif %}</td>
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap;">{{ l.created_at[:16] if l.created_at else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:60px;text-align:center;color:var(--muted);">No activity yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

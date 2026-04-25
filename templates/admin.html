@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel{% endblock %}
+{% block page_title %}Admin Panel{% endblock %}
+{% block page_subtitle %}
+  {% if session.role == 'state' %}Manage all district and village administrators
+  {% else %}Manage village administrators for {{ session.district }}{% endif %}
+{% endblock %}
+
+{% block content %}
+
+{% if msg %}
+<div class="alert alert-{{ msg[0] }}">
+  {% if msg[0] == 'success' %}✅{% else %}⚠️{% endif %} {{ msg[1] }}
+</div>
+{% endif %}
+
+<!-- STATS ROW -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
+  <div class="stat-card blue">
+    <div class="stat-icon">🏛️</div>
+    <div class="label">District Admins</div>
+    <div class="value">{{ district_admins|length }}</div>
+    <div class="sub">Across Maharashtra</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-icon">🏘️</div>
+    <div class="label">Village Admins</div>
+    <div class="value">{{ village_admins|length }}</div>
+    <div class="sub">Field level officers</div>
+  </div>
+  <div class="stat-card gold">
+    <div class="stat-icon">👥</div>
+    <div class="label">Total Managed</div>
+    <div class="value">{{ district_admins|length + village_admins|length }}</div>
+    <div class="sub">Across all levels</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
+
+  <!-- CREATE DISTRICT ADMIN (State only) -->
+  {% if session.role == 'state' %}
+  <div class="section-box">
+    <div class="section-header">
+      <h3>🏛️ Create District Admin</h3>
+    </div>
+    <div class="section-body">
+      <form method="post">
+        <input type="hidden" name="action" value="create_district">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Username *</label>
+            <input type="text" name="username" placeholder="e.g. nashik_admin" required>
+          </div>
+          <div class="form-group">
+            <label>Password *</label>
+            <input type="password" name="password" placeholder="Min 6 chars" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" name="full_name" placeholder="e.g. Suresh Patil">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" placeholder="admin@nashik.gov.in">
+          </div>
+        </div>
+        <div class="form-row single">
+          <div class="form-group">
+            <label>District *</label>
+            <select name="district_name" id="districtSelect" required>
+              <option value="">— Select District —</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:4px;">+ Create District Admin</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- CREATE VILLAGE ADMIN -->
+  <div class="section-box">
+    <div class="section-header">
+      <h3>🏘️ Create Village Admin</h3>
+    </div>
+    <div class="section-body">
+      <form method="post">
+        <input type="hidden" name="action" value="create_village">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Username *</label>
+            <input type="text" name="username" placeholder="e.g. sinnar_admin" required>
+          </div>
+          <div class="form-group">
+            <label>Password *</label>
+            <input type="password" name="password" placeholder="Min 6 chars" required>
+          </div>
+        </div>
+        <div class="form-row single">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" name="full_name" placeholder="e.g. Priya Deshmukh">
+          </div>
+        </div>
+        {% if session.role == 'state' %}
+        <div class="form-row">
+          <div class="form-group">
+            <label>District *</label>
+            <select name="district_name" id="villDistrictSelect" required>
+              <option value="">— Select District —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Village *</label>
+            <select name="village_name" id="villSelect" required>
+              <option value="">— Select Village —</option>
+            </select>
+          </div>
+        </div>
+        {% else %}
+        <input type="hidden" name="district_name" value="{{ session.district }}">
+        <div class="form-row single">
+          <div class="form-group">
+            <label>Village *</label>
+            <select name="village_name" id="villSelect" required>
+              <option value="">— Select Village —</option>
+            </select>
+          </div>
+        </div>
+        {% endif %}
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:4px;">+ Create Village Admin</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<!-- ADD HOUSEHOLD -->
+<div class="section-box" style="margin-bottom:24px;">
+  <div class="section-header">
+    <h3>🏠 Add Household</h3>
+  </div>
+  <div class="section-body">
+    <form method="post">
+      <input type="hidden" name="action" value="add_household">
+      <div class="form-row three">
+        <div class="form-group">
+          <label>House Number *</label>
+          <input type="text" name="house_no" placeholder="e.g. H-1042" required>
+        </div>
+        <div class="form-group">
+          <label>Consumer Name</label>
+          <input type="text" name="consumer_name" placeholder="e.g. Ramesh Patil">
+        </div>
+        <div class="form-group">
+          <label>Meter ID</label>
+          <input type="text" name="meter_id" placeholder="e.g. MH-NAS-1042">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>No. of People</label>
+          <input type="number" name="people" placeholder="4" min="1">
+        </div>
+        <div class="form-group">
+          <label>No. of Appliances</label>
+          <input type="number" name="appliances" placeholder="3" min="1">
+        </div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group">
+          <label>Expected Usage (kWh/month)</label>
+          <input type="number" name="expected_usage" step="0.1" placeholder="150.0">
+        </div>
+        <div class="form-group">
+          <label>District *</label>
+          <select name="district" id="hhDistSelect" required>
+            <option value="">— Select District —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Village *</label>
+          <select name="village" id="hhVillSelect" required>
+            <option value="">— Select Village —</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-success">+ Add Household</button>
+    </form>
+  </div>
+</div>
+
+<!-- DISTRICT ADMINS LIST -->
+{% if session.role == 'state' and district_admins %}
+<div class="section-box" style="margin-bottom:24px;">
+  <div class="section-header">
+    <h3>🏛️ District Administrators</h3>
+    <span style="font-size:12px;color:var(--muted);">{{ district_admins|length }} total</span>
+  </div>
+  <table class="eg-table">
+    <thead>
+      <tr><th>Username</th><th>Full Name</th><th>District</th><th>Email</th><th>Created</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      {% for u in district_admins %}
+      <tr>
+        <td><strong>{{ u.username }}</strong></td>
+        <td>{{ u.full_name or '—' }}</td>
+        <td><span class="badge badge-mod">{{ u.district }}</span></td>
+        <td style="font-size:12px;color:var(--muted);">{{ u.email or '—' }}</td>
+        <td style="font-size:12px;color:var(--muted);">{{ u.created_at[:10] if u.created_at else '—' }}</td>
+        <td>
+          <a href="/delete_admin/{{ u.id }}" class="btn btn-danger btn-sm"
+            onclick="return confirm('Delete admin {{ u.username }}?')">Delete</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- VILLAGE ADMINS LIST -->
+{% if village_admins %}
+<div class="section-box">
+  <div class="section-header">
+    <h3>🏘️ Village Administrators</h3>
+    <span style="font-size:12px;color:var(--muted);">{{ village_admins|length }} total</span>
+  </div>
+  <table class="eg-table">
+    <thead>
+      <tr><th>Username</th><th>Full Name</th><th>District</th><th>Village</th><th>Created</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      {% for u in village_admins %}
+      <tr>
+        <td><strong>{{ u.username }}</strong></td>
+        <td>{{ u.full_name or '—' }}</td>
+        <td style="font-size:12px;color:var(--muted);">{{ u.district }}</td>
+        <td><span class="badge badge-safe">{{ u.village }}</span></td>
+        <td style="font-size:12px;color:var(--muted);">{{ u.created_at[:10] if u.created_at else '—' }}</td>
+        <td>
+          <a href="/delete_admin/{{ u.id }}" class="btn btn-danger btn-sm"
+            onclick="return confirm('Delete admin {{ u.username }}?')">Delete</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Populate districts
+async function loadDistricts() {
+  const res = await fetch('/get_districts');
+  const data = await res.json();
+
+  const selectors = ['districtSelect', 'villDistrictSelect', 'hhDistSelect'].map(id => document.getElementById(id)).filter(Boolean);
+
+  // If district admin, pre-set district for village admin form
+  {% if session.role == 'district' %}
+  const vs = document.getElementById('villSelect');
+  if (vs) loadVillages('{{ session.district }}', vs);
+  {% endif %}
+
+  for (const sel of selectors) {
+    data.districts.forEach(d => sel.add(new Option(d, d)));
+  }
+
+  // Wire up dynamic village loaders
+  const vd = document.getElementById('villDistrictSelect');
+  if (vd) vd.addEventListener('change', () => loadVillages(vd.value, document.getElementById('villSelect')));
+
+  const hd = document.getElementById('hhDistSelect');
+  if (hd) hd.addEventListener('change', () => loadVillages(hd.value, document.getElementById('hhVillSelect')));
+}
+
+async function loadVillages(district, targetSelect) {
+  if (!district || !targetSelect) return;
+  const res = await fetch('/get_villages/' + district);
+  const data = await res.json();
+  targetSelect.innerHTML = '<option value="">— Select Village —</option>';
+  data.villages.forEach(v => targetSelect.add(new Option(v, v)));
+}
+
+loadDistricts();
+</script>
+{% endblock %}

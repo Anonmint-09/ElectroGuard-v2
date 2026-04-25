@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ElectroGuard — {% block title %}{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #03102B;
+    --navy2: #050F22;
+    --blue: #0B3D91;
+    --blue-lt: #1A5CC7;
+    --cyan: #00B4D8;
+    --gold: #F4A629;
+    --red: #E63946;
+    --green: #06D6A0;
+    --purple: #7C3AED;
+    --glass: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+    --text: rgba(255,255,255,0.85);
+    --muted: rgba(255,255,255,0.4);
+    --sidebar-w: 240px;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--navy2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0;
+    z-index: 100;
+    padding: 0 0 24px;
+  }
+
+  .sb-logo {
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sb-logo .icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--blue), var(--cyan));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .sb-logo .text h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+  }
+  .sb-logo .text span {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+  .sb-user {
+    margin: 16px 12px;
+    padding: 12px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .sb-user .uname {
+    font-size: 13px; font-weight: 600; color: #fff;
+    display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+  }
+
+  .sb-user .role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .rb-state    { background: rgba(244,166,41,0.15); color: var(--gold); border: 1px solid rgba(244,166,41,0.25); }
+  .rb-district { background: rgba(0,180,216,0.15); color: var(--cyan); border: 1px solid rgba(0,180,216,0.25); }
+  .rb-village  { background: rgba(6,214,160,0.15); color: var(--green); border: 1px solid rgba(6,214,160,0.25); }
+
+  .sb-user .location {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .sb-section {
+    padding: 16px 12px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .sb-nav { flex: 1; padding: 0 12px; }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+  }
+
+  .nav-link .nav-icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    background: transparent;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .nav-link:hover {
+    color: #fff;
+    background: var(--glass);
+  }
+
+  .nav-link.active {
+    color: #fff;
+    background: rgba(11,61,145,0.4);
+    border: 1px solid rgba(0,180,216,0.2);
+  }
+
+  .nav-link.active .nav-icon {
+    background: rgba(0,180,216,0.15);
+  }
+
+  .nav-link.danger { color: rgba(230,57,70,0.7); }
+  .nav-link.danger:hover { color: var(--red); background: rgba(230,57,70,0.08); }
+
+  .sb-bottom {
+    padding: 0 12px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    margin-top: auto;
+  }
+
+  /* ─── MAIN ─── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Top bar */
+  .topbar {
+    background: rgba(5,15,34,0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .topbar-left h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .topbar-left p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+  .gov-seal {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ─── PAGE CONTENT ─── */
+  .page-content { padding: 32px; flex: 1; }
+
+  /* ─── CARDS GRID ─── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .stat-card.blue::before   { background: linear-gradient(90deg, var(--blue), var(--cyan)); }
+  .stat-card.gold::before   { background: linear-gradient(90deg, var(--gold), #F7C95A); }
+  .stat-card.red::before    { background: linear-gradient(90deg, var(--red), #FF6B6B); }
+  .stat-card.green::before  { background: linear-gradient(90deg, var(--green), #4DFFC4); }
+
+  .stat-card .label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .stat-card .value {
+    font-family: 'Syne', sans-serif;
+    font-size: 34px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-card .sub {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .stat-card .stat-icon {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 28px;
+    opacity: 0.25;
+  }
+
+  /* ─── SECTION BOX ─── */
+  .section-box {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .section-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .section-header h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .section-body { padding: 20px; }
+
+  /* ─── TABLE ─── */
+  .eg-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .eg-table th {
+    background: rgba(0,0,0,0.3);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 10px 14px;
+    text-align: left;
+  }
+
+  .eg-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  .eg-table tr:last-child td { border-bottom: none; }
+  .eg-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* ─── BADGES ─── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-theft { background: rgba(230,57,70,0.15); color: #FF7A7A; border: 1px solid rgba(230,57,70,0.3); }
+  .badge-safe  { background: rgba(6,214,160,0.15); color: var(--green); border: 1px solid rgba(6,214,160,0.3); }
+  .badge-crit  { background: rgba(230,57,70,0.25); color: #FF4455; border: 1px solid rgba(230,57,70,0.4); }
+  .badge-high  { background: rgba(244,166,41,0.15); color: var(--gold); border: 1px solid rgba(244,166,41,0.3); }
+  .badge-mod   { background: rgba(0,180,216,0.1); color: var(--cyan); border: 1px solid rgba(0,180,216,0.2); }
+
+  /* ─── FORMS ─── */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .form-row.single { grid-template-columns: 1fr; }
+  .form-row.three  { grid-template-columns: 1fr 1fr 1fr; }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--muted);
+  }
+
+  input[type="text"], input[type="password"], input[type="number"],
+  input[type="email"], input[type="tel"], select, textarea {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    padding: 10px 12px;
+    outline: none;
+    transition: all 0.15s;
+    width: 100%;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--cyan);
+    background: rgba(0,180,216,0.06);
+    box-shadow: 0 0 0 3px rgba(0,180,216,0.08);
+  }
+
+  select option { background: #0B1929; color: #fff; }
+
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { transform: translateY(-1px); }
+
+  .btn-primary { background: linear-gradient(135deg, var(--blue), var(--blue-lt)); color: #fff; }
+  .btn-primary:hover { box-shadow: 0 4px 20px rgba(11,61,145,0.5); }
+
+  .btn-danger { background: rgba(230,57,70,0.15); color: var(--red); border: 1px solid rgba(230,57,70,0.3); }
+  .btn-danger:hover { background: rgba(230,57,70,0.3); }
+
+  .btn-success { background: rgba(6,214,160,0.15); color: var(--green); border: 1px solid rgba(6,214,160,0.3); }
+
+  .btn-sm { padding: 5px 12px; font-size: 11px; }
+
+  /* ─── ALERT ─── */
+  .alert {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+  .alert-success { background: rgba(6,214,160,0.1); border: 1px solid rgba(6,214,160,0.25); color: var(--green); }
+  .alert-error   { background: rgba(230,57,70,0.1); border: 1px solid rgba(230,57,70,0.25); color: #FF8A8A; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="icon">⚡</div>
+    <div class="text">
+      <h3>ElectroGuard</h3>
+      <span>MEB · Maharashtra</span>
+    </div>
+  </div>
+
+  <div class="sb-user">
+    <div class="uname">👤 {{ session.full_name or session.user }}</div>
+    <span class="role-badge rb-{{ session.role }}">
+      {% if session.role == 'state' %}State Admin
+      {% elif session.role == 'district' %}District Admin
+      {% else %}Village Admin{% endif %}
+    </span>
+    {% if session.district %}
+    <div class="location">
+      📍 {{ session.district }}{% if session.village %} › {{ session.village }}{% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="sb-nav">
+    <div class="sb-section">Navigation</div>
+
+    <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}">
+      <div class="nav-icon">📊</div> Dashboard
+    </a>
+
+    <a href="/predict_page" class="nav-link {% if request.path == '/predict_page' or request.path == '/predict' %}active{% endif %}">
+      <div class="nav-icon">⚡</div> Detect Theft
+    </a>
+
+    <a href="/reports" class="nav-link {% if request.path == '/reports' %}active{% endif %}">
+      <div class="nav-icon">📋</div> Reports
+    </a>
+
+    {% if session.role in ['state', 'district'] %}
+    <a href="/admin" class="nav-link {% if request.path == '/admin' %}active{% endif %}">
+      <div class="nav-icon">🏛️</div> Admin Panel
+    </a>
+    {% endif %}
+
+    <a href="/activity" class="nav-link {% if request.path == '/activity' %}active{% endif %}">
+      <div class="nav-icon">📜</div> Activity Log
+    </a>
+
+    <a href="/settings" class="nav-link {% if request.path == '/settings' %}active{% endif %}">
+      <div class="nav-icon">⚙️</div> Settings
+    </a>
+  </div>
+
+  <div class="sb-bottom">
+    <a href="/logout" class="nav-link danger">
+      <div class="nav-icon">🚪</div> Logout
+    </a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>{% block page_title %}{% endblock %}</h1>
+      <p>{% block page_subtitle %}{% endblock %}</p>
+    </div>
+    <div class="topbar-right">
+      <div class="gov-seal">🏛️ Maharashtra Electricity Board</div>
+    </div>
+  </div>
+
+  <div class="page-content">
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
