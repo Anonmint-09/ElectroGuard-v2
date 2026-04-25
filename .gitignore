@@ -34,7 +34,7 @@ ENV/
 *.sqlite3
 
 # ── ML model (large binary, regenerate locally) ──
-model.pkl
+
 *.pkl
 *.joblib
 
