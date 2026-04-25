@@ -193,3 +193,7 @@ This project is licensed under the [MIT License](LICENSE).
 <div align="center">
   Built for Maharashtra Electricity Board &nbsp;|&nbsp; ElectroGuard v2.0
 </div>
+## 👨‍💻 Contributors
+
+- Ali-Raza Koke (Owner)
+- Karim Shaikh (Owner)
